@@ -1,0 +1,425 @@
+{
+  "name": "automated-content-creation-and-posting-on-x",
+  "nodes": [
+    {
+      "parameters": {
+        "pollTimes": {
+          "item": [
+            {
+              "mode": "everyMinute"
+            }
+          ]
+        },
+        "feedUrl": "https://feeds.feedburner.com/TheHackersNews"
+      },
+      "type": "n8n-nodes-base.rssFeedReadTrigger",
+      "typeVersion": 1,
+      "position": [
+        -1472,
+        560
+      ],
+      "id": "dc0f4efe-09a7-4e86-82bc-ba8ab484c7f6",
+      "name": "RSS Feed Trigger"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "c1382295-9ffc-41c6-8baa-da3ce483541f",
+              "leftValue": "={{ $json.is_high_quality }}",
+              "rightValue": "\"t\"",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        -704,
+        560
+      ],
+      "id": "33c298d7-eda6-4ec4-b578-94036e9edbdc",
+      "name": "Quality Filter"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        -544,
+        752
+      ],
+      "id": "b7a57303-3076-4978-ab4e-fef9c918fd18",
+      "name": "Google Gemini Chat Model1",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "U1C2x7D7ak7IK9Je",
+          "name": "lead-generation-automation"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "11WEUS-bTJix-LN52PnohvNfJjBG2kT0aagBBt6xKQM8",
+          "mode": "list",
+          "cachedResultName": "Untitled spreadsheet",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/11WEUS-bTJix-LN52PnohvNfJjBG2kT0aagBBt6xKQM8/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Sheet1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/11WEUS-bTJix-LN52PnohvNfJjBG2kT0aagBBt6xKQM8/edit#gid=0"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Twitter Post": "={{ $json.twitterPost }}",
+            "LinkedIn Post": "={{ $json.linkedinPost }}",
+            "Status": "={{ $json.status }}",
+            "Title": "={{ $('Quality Filter').item.json.title }}",
+            "Score": "={{ $('Quality Filter').item.json.overall_score }}",
+            "Link": "={{ $('RSS Feed Trigger').item.json.link }}",
+            "Date": "={{ $('RSS Feed Trigger').item.json.pubDate }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "Date",
+              "displayName": "Date",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Title",
+              "displayName": "Title",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Link",
+              "displayName": "Link",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Score",
+              "displayName": "Score",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Twitter Post",
+              "displayName": "Twitter Post",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "LinkedIn Post",
+              "displayName": "LinkedIn Post",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Status",
+              "displayName": "Status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        16,
+        416
+      ],
+      "id": "b364e57e-5de0-4fe4-93ff-81668a7a90e1",
+      "name": "Store Content",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "2iTCEihqFSeEqLy4",
+          "name": "lead-generation-automation"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Evaluate the following article and provide a quality assessment.\n\nArticle title:\n{{ $json.title }}\n\nArticle content:\n{{ $json.content }}\n\nArticle link:\n{{ $json.link }}\n\nNow analyze the content and RETURN a JSON object with the following structure:\n\n{\n  \"title\": \"...\",\n  \"summary\": \"...\",\n  \"relevance_score\": 0-100,        // How relevant this article is to AI, automation, or technology innovation\n  \"credibility_score\": 0-100,      // Based on source authority and tone\n  \"engagement_score\": 0-100,       // How likely it would engage readers on social media\n  \"overall_score\": 0-100,          // Weighted average of the above (60% relevance, 25% engagement, 15% credibility)\n  \"category\": \"AI | Automation | Tech | Data | Other\",\n  \"verdict\": \"post\" | \"review\" | \"discard\"   // 'post' if overall_score >= 75, 'review' if 50–74, 'discard' otherwise\n  \"link\": \"...\"\n}\n\nKeep your tone objective and analytical.\n",
+        "hasOutputParser": true,
+        "options": {
+          "systemMessage": "You are an AI content analyst specializing in evaluating online articles for social-media sharing.  \nYour job is to score how interesting, relevant, and engaging each article would be for a tech and AI-focused audience.  \n\nAlways respond in valid JSON format, using concise and factual language.  \nFocus on clarity, insight, and potential shareability rather than personal opinions.  \nNever include commentary or explanations outside the JSON.\n"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2.2,
+      "position": [
+        -1264,
+        560
+      ],
+      "id": "36ffb9d5-0dc6-4844-a099-f7e38a97a475",
+      "name": "Scoring AI"
+    },
+    {
+      "parameters": {
+        "sessionIdType": "customKey",
+        "sessionKey": "={{ $execution.id }}"
+      },
+      "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+      "typeVersion": 1.3,
+      "position": [
+        -1200,
+        768
+      ],
+      "id": "d6711b39-3edc-4fbd-9202-e91e55980de7",
+      "name": "Simple Memory"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        -1344,
+        768
+      ],
+      "id": "4b8b7fa8-0742-4c2a-9c6f-2ecc0343a6ad",
+      "name": "Google Gemini Chat Model",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "NSC62nb2eRzidEbA",
+          "name": "veo-video-generation"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "/**\n * Node 3 - Structured Output Parser / Cleaner\n * Converts Scoring AI output JSON to clean structured data.\n */\n\nlet raw = $json.output || $json.text || \"\";\nlet parsed = {};\n\ntry {\n  // Extract only the JSON part if Gemini added explanations\n  const match = raw.match(/\\{[\\s\\S]*\\}/);\n  if (!match) throw new Error(\"No JSON found in AI output\");\n  parsed = JSON.parse(match[0]);\n} catch (err) {\n  // fallback to default if JSON parsing fails\n  parsed = {\n    title: $json.title || \"\",\n    summary: $json.description || \"\",\n    relevance_score: 0,\n    credibility_score: 0,\n    engagement_score: 0,\n    overall_score: 0,\n    category: \"Uncategorized\",\n    verdict: \"review\",\n    error_message: err.message,\n    raw_output: raw\n  };\n}\n\n// --- ✨ Customize below as needed ---\n\n// Normalize values and add computed fields\nconst clean = {\n  title: parsed.title || $json.title,\n  summary: parsed.summary || \"\",\n  relevance_score: Number(parsed.relevance_score) || 0,\n  credibility_score: Number(parsed.credibility_score) || 0,\n  engagement_score: Number(parsed.engagement_score) || 0,\n  overall_score: Number(parsed.overall_score) || 0,\n  category: (parsed.category || \"Uncategorized\").trim(),\n  verdict: (parsed.verdict || \"review\").toLowerCase(),\n  link: parsed.link || $json.link,\n\n  // Example: derived or enhanced fields\n  is_high_quality: (Number(parsed.overall_score) || 0) >= 75,\n  short_summary: (parsed.summary || \"\").slice(0, 200),\n  timestamp: new Date().toISOString(),\n};\n\nreturn [clean];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -912,
+        560
+      ],
+      "id": "1ef2e52b-65b3-417f-897e-8e5ef8dcd9f6",
+      "name": "Code"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=You are given an article summary and metadata. \n\nCreate two distinct posts — one for Twitter (X) and one for LinkedIn — following the rules below.\n\n### Article Info\nTitle: {{$json.title}}\nSummary: {{$json.summary}}\nLink: {{$json.link}}\n\n### Instructions\n- For Twitter:\n  - Max 260 characters.\n  - Include 1 relevant emoji.\n  - Add 1–2 relevant hashtags (e.g., #AI #Automation).\n  - Include the article link at the end.\n- For LinkedIn:\n  - 2–3 sentences, more conversational and professional.\n  - Include the article link naturally.\n  - Add up to 3 hashtags.\n\n### Output Format (strictly follow this)\n",
+        "options": {
+          "systemMessage": "You are an expert social media copywriter specialized in tech, AI, and automation topics.\nYour goal is to transform summarized articles into concise, engaging social media posts tailored for Twitter (X) and LinkedIn.\nMaintain factual accuracy, use a professional yet conversational tone, and emphasize insights or key takeaways.\nEnsure outputs follow strict formatting for automated posting."
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2.2,
+      "position": [
+        -496,
+        560
+      ],
+      "id": "830d1878-9562-490a-bea1-7a251a08dfb2",
+      "name": "Post Generator"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Extract AI Agent output safely\nconst rawOutput = $json.output || \"\";\n\n// Normalize and parse posts using your delimiters\nconst twitterPart = rawOutput.split(\"twitter_post\")[1]?.split(\"linkedin_post\")[0]?.trim() || \"\";\nconst linkedinPart = rawOutput.split(\"linkedin_post\")[1]?.trim() || \"\";\n\n// Clean up line breaks, spaces\nconst twitterPost = twitterPart.replace(/\\s+/g, \" \").trim();\nconst linkedinPost = linkedinPart.replace(/\\s+/g, \" \").trim();\n\n// Optional: enforce Twitter character limit\nconst twitterPostFinal = twitterPost.length > 280 ? twitterPost.slice(0, 277) + \"...\" : twitterPost;\n\n// Return structured data for downstream nodes\nreturn [{\n  twitterPost: twitterPostFinal,\n  linkedinPost,\n  title: $json.title || \"\",\n  link: $json.link || \"\",\n  score: $json.score || \"\",\n  category: $json.category || \"\",\n  summary: $json.summary || \"\",\n  status: \"Generated\"\n}];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -192,
+        560
+      ],
+      "id": "03da4476-6580-49bd-9adb-46dd8f8fa6e7",
+      "name": "Code1"
+    },
+    {
+      "parameters": {
+        "text": "={{ $json.twitterPost }}",
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.twitter",
+      "typeVersion": 2,
+      "position": [
+        16,
+        704
+      ],
+      "id": "2e8bb46d-ac75-44ed-bd0f-44d4039847d2",
+      "name": "Post Tweet",
+      "credentials": {
+        "twitterOAuth2Api": {
+          "id": "jS31Z85fn2oUesN1",
+          "name": "X account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Quality Filter": {
+      "main": [
+        [
+          {
+            "node": "Post Generator",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        []
+      ]
+    },
+    "RSS Feed Trigger": {
+      "main": [
+        [
+          {
+            "node": "Scoring AI",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Simple Memory": {
+      "ai_memory": [
+        [
+          {
+            "node": "Scoring AI",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Scoring AI",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Scoring AI": {
+      "main": [
+        [
+          {
+            "node": "Code",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model1": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Post Generator",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code": {
+      "main": [
+        [
+          {
+            "node": "Quality Filter",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Post Generator": {
+      "main": [
+        [
+          {
+            "node": "Code1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code1": {
+      "main": [
+        [
+          {
+            "node": "Store Content",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Post Tweet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "bf9ace33-89fe-435e-a0cc-933c16f58f57",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "5ad8c55b798e74260613e5177fd66f410a2c23ed95f8f30ad9bbf3e977506e6a"
+  },
+  "id": "JuuWBzdCKPmXxHlL",
+  "tags": []
+}
